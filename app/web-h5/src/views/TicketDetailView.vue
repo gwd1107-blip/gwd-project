@@ -1,6 +1,6 @@
 <template>
   <div class="detail-page">
-    <van-nav-bar title="工单详情" left-text="返回" left-arrow @click-left="router.back" />
+    <van-nav-bar title="工单详情" left-text="返回" left-arrow @click-left="router.push('/tickets')" />
     <van-cell-group v-if="ticket" inset>
       <van-cell title="单号" :value="ticket.ticketNo" />
       <van-cell title="标题" :value="ticket.title" />

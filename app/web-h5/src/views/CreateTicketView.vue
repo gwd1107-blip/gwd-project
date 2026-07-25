@@ -1,6 +1,6 @@
 <template>
   <div class="create-page">
-    <van-nav-bar title="我要提单" left-text="返回" left-arrow @click-left="router.back" />
+    <van-nav-bar title="我要提单" left-text="返回" left-arrow @click-left="router.push('/home')" />
     <van-cell-group inset>
       <van-field
         v-model="form.title"
