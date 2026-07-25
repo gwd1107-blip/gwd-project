@@ -50,3 +50,20 @@ enum UserRole {
   TECHNICIAN
   ADMIN
 }
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  parentId  Int?     @map("parent_id")
+  name      String
+  level     Int      @default(1) // 1=大类，2=小类，设计 3.4
+  icon      String?
+  enabled   Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([parentId])
+  @@index([level, enabled])
+  @@unique([parentId, name], name: "category_parent_name")
+  @@map("categories")
+}
