@@ -6,6 +6,7 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Impact, Priority, TicketEventAction, TicketStatus, UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { KbService } from '../kb/kb.service';
 import { assertTransitionAllowed } from './ticket.state-machine';
 import { computeDeadlines, computePriority } from './ticket.policy';
 import { CreateTicketDto } from './dto/create-ticket.dto';
@@ -17,7 +18,10 @@ import { TransferTicketDto } from './dto/transfer-ticket.dto';
 
 @Injectable()
 export class TicketService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly kbService: KbService,
+  ) {}
 
   /** 提单：创建时只记录紧急程度，优先级在接单时计算（设计 3.5） */
   async create(dto: CreateTicketDto, requesterUserid: string) {
@@ -126,6 +130,12 @@ export class TicketService {
       }),
       this.recordEvent(id, actor.userid, TicketEventAction.CLOSE, ticket.status, TicketStatus.CLOSED, null),
     ]);
+
+    // 关单时把解决方案沉淀为知识草稿（设计 5.1）
+    if (ticket.solution) {
+      await this.kbService.createFromTicket(ticket);
+    }
+
     return updated;
   }
 

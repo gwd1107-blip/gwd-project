@@ -5,7 +5,8 @@
     <div class="actions">
       <van-button type="primary" block @click="router.push('/tickets/create')">我要提单</van-button>
       <van-button type="success" block @click="router.push('/tickets')">我的工单</van-button>
-      <van-button type="warning" block>已知问题</van-button>
+      <van-button type="success" block @click="router.push('/knowledge')">查知识</van-button>
+      <van-button type="warning" block @click="router.push('/knowledge?tab=known')">已知问题</van-button>
       <van-button type="danger" block v-if="user?.role !== 'EMPLOYEE'">待我处理</van-button>
       <van-button plain block @click="logout">退出登录</van-button>
     </div>

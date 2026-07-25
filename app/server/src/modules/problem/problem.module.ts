@@ -4,10 +4,12 @@
  * 对应设计：docs/02-开发计划.md R4
  */
 import { Module } from '@nestjs/common';
+import { KbModule } from '../kb/kb.module';
 import { ProblemService } from './problem.service';
 import { ProblemController } from './problem.controller';
 
 @Module({
+  imports: [KbModule],
   controllers: [ProblemController],
   providers: [ProblemService],
 })

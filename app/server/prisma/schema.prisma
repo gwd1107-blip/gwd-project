@@ -113,7 +113,8 @@ model Category {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  tickets Ticket[]
+  tickets    Ticket[]
+  kbArticles KbArticle[]
 
   @@index([parentId])
   @@index([level, enabled])
@@ -218,4 +219,42 @@ model ProblemIncident {
   @@index([problemId])
   @@index([ticketId])
   @@map("problem_incidents")
+}
+
+enum KbArticleStatus {
+  DRAFT     @map("draft")
+  PUBLISHED @map("published")
+
+  @@map("kb_article_status")
+}
+
+enum KbArticleSource {
+  MANUAL  @map("manual")
+  TICKET  @map("ticket")
+  PROBLEM @map("problem")
+
+  @@map("kb_article_source")
+}
+
+model KbArticle {
+  id         Int            @id @default(autoincrement())
+  title      String
+  content    String
+  categoryId Int            @map("category_id")
+  tags       String[]       @default([])
+  sourceType KbArticleSource @default(MANUAL) @map("source_type")
+  sourceId   Int?           @map("source_id") // 来源工单/问题 ID
+  status     KbArticleStatus @default(DRAFT)
+  likes      Int            @default(0)
+  dislikes   Int            @default(0)
+  views      Int            @default(0)
+  createdAt  DateTime       @default(now()) @map("created_at")
+  updatedAt  DateTime       @updatedAt @map("updated_at")
+
+  category Category @relation(fields: [categoryId], references: [id])
+
+  @@index([status])
+  @@index([categoryId])
+  @@index([sourceType, sourceId])
+  @@map("kb_articles")
 }

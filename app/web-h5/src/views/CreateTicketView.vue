@@ -15,6 +15,17 @@
         rows="3"
         placeholder="发生了什么、已尝试的解决办法"
       />
+      <div v-if="recommendations.articles.length || recommendations.knownErrors.length" class="recommend-box">
+        <p class="recommend-title">为您找到相关内容：</p>
+        <div v-for="a in recommendations.articles" :key="'a' + a.id" class="recommend-item">
+          <span class="recommend-text">📘 {{ a.title }}</span>
+          <van-button size="small" type="primary" plain @click="resolveByArticle(a)">解决了</van-button>
+        </div>
+        <div v-for="k in recommendations.knownErrors" :key="'k' + k.id" class="recommend-item">
+          <span class="recommend-text">⚠️ {{ k.title }}（已知问题）</span>
+          <van-button size="small" type="warning" plain @click="resolveByProblem(k)">我也遇到了</van-button>
+        </div>
+      </div>
       <van-field
         v-model="categoryText"
         label="问题分类"
@@ -80,7 +91,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import {
   Button as VanButton,
@@ -107,10 +118,45 @@ const form = ref({
   urgency: 'MEDIUM',
 });
 
+const recommendations = ref<{ articles: any[]; knownErrors: any[] }>({ articles: [], knownErrors: [] });
+let recommendTimer: ReturnType<typeof setTimeout> | null = null;
+
 onMounted(async () => {
   const res = await api('/api/categories');
   categories.value = await res.json();
 });
+
+watch(
+  () => form.value.description,
+  (val) => {
+    if (recommendTimer) clearTimeout(recommendTimer);
+    if (!val || val.trim().length < 3) {
+      recommendations.value = { articles: [], knownErrors: [] };
+      return;
+    }
+    recommendTimer = setTimeout(async () => {
+      const res = await api(`/api/kb/articles/recommend?q=${encodeURIComponent(val)}`);
+      recommendations.value = await res.json();
+    }, 400);
+  },
+);
+
+function resolveByArticle(article: any) {
+  alert(`【${article.title}】\n\n${article.content}`);
+  resetForm();
+}
+
+function resolveByProblem(problem: any) {
+  alert(`已知问题：${problem.title}\n临时方案：${problem.workaround || '暂无'}\nIT 正在处理中`);
+  resetForm();
+}
+
+function resetForm() {
+  form.value.title = '';
+  form.value.description = '';
+  form.value.categoryId = null;
+  recommendations.value = { articles: [], knownErrors: [] };
+}
 
 const childOptions = computed(() => {
   const parent = categories.value.find((p) => p.id === pickerParent.value);
@@ -203,5 +249,30 @@ async function submit() {
 }
 .category-confirm {
   margin-top: 16px;
+}
+.recommend-box {
+  margin: 8px 0;
+  padding: 12px;
+  background: #f7f8fa;
+  border-radius: 8px;
+}
+.recommend-title {
+  margin: 0 0 8px;
+  color: #666;
+  font-size: 13px;
+}
+.recommend-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.recommend-item:last-child {
+  margin-bottom: 0;
+}
+.recommend-text {
+  flex: 1;
+  margin-right: 8px;
+  font-size: 13px;
 }
 </style>

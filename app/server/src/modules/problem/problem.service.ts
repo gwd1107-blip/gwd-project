@@ -6,6 +6,7 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ProblemStatus, TicketEventAction, TicketStatus, UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { KbService } from '../kb/kb.service';
 import { ticketsToCascadeClose } from './problem.cascade';
 import { CreateProblemDto } from './dto/create-problem.dto';
 import { UpdateProblemDto } from './dto/update-problem.dto';
@@ -13,7 +14,10 @@ import { AssociateTicketDto } from './dto/associate-ticket.dto';
 
 @Injectable()
 export class ProblemService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly kbService: KbService,
+  ) {}
 
   /** 从事件升级或手动创建问题 */
   async create(dto: CreateProblemDto, ownerUserid: string) {
@@ -61,11 +65,25 @@ export class ProblemService {
     const problem = await this.findById(id);
     this.assertTechOrAdmin(actor.role);
     this.assertProblemTransitionAllowed(problem.status, ProblemStatus.KNOWN_ERROR);
-    return this.prisma.problem.update({
+    const updated = await this.prisma.problem.update({
       where: { id },
       data: { status: ProblemStatus.KNOWN_ERROR, isKnownError: true },
       include: { incidents: { include: { ticket: true } } },
     });
+
+    // 已知错误时把临时方案发布到知识库（设计 4.2/5.1）
+    if (updated.workaround) {
+      const categoryId = updated.incidents[0]?.ticket?.categoryId ?? 1;
+      await this.kbService.publishFromProblem({
+        id: updated.id,
+        title: updated.title,
+        workaround: updated.workaround,
+        finalSolution: updated.finalSolution,
+        categoryId,
+      });
+    }
+
+    return updated;
   }
 
   /** 解决：记录最终方案，并级联关闭关联事件 */
@@ -113,6 +131,19 @@ export class ProblemService {
       }
 
       return updatedProblem;
+    }).then(async (updatedProblem) => {
+      // 问题解决后把最终方案发布到知识库（设计 4.1/5.1）
+      if (updatedProblem.finalSolution) {
+        const categoryId = updatedProblem.incidents[0]?.ticket?.categoryId ?? 1;
+        await this.kbService.publishFromProblem({
+          id: updatedProblem.id,
+          title: updatedProblem.title,
+          workaround: updatedProblem.workaround,
+          finalSolution: updatedProblem.finalSolution,
+          categoryId,
+        });
+      }
+      return updatedProblem;
     });
   }
 
@@ -134,6 +165,14 @@ export class ProblemService {
       include: {
         incidents: { include: { ticket: true } },
       },
+      orderBy: { updatedAt: 'desc' },
+    });
+  }
+
+  /** 已知错误列表（供 H5 查看） */
+  async listKnownErrors() {
+    return this.prisma.problem.findMany({
+      where: { isKnownError: true },
       orderBy: { updatedAt: 'desc' },
     });
   }

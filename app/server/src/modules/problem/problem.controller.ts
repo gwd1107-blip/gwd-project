@@ -25,6 +25,11 @@ export class ProblemController {
     return this.problemService.list();
   }
 
+  @Get('known')
+  knownErrors() {
+    return this.problemService.listKnownErrors();
+  }
+
   @Get(':id')
   detail(@Param('id', ParseIntPipe) id: number) {
     return this.problemService.detail(id);
