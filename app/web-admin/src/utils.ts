@@ -26,3 +26,17 @@ export const priorityText: Record<string, string> = {
   P3: 'P3',
   P4: 'P4',
 };
+
+export const problemStatusText: Record<string, string> = {
+  INVESTIGATING: '调查中',
+  ROOT_CAUSE_FOUND: '已定位根因',
+  KNOWN_ERROR: '已知错误',
+  RESOLVED: '已解决',
+};
+
+export const problemStatusType: Record<string, any> = {
+  INVESTIGATING: 'info',
+  ROOT_CAUSE_FOUND: 'primary',
+  KNOWN_ERROR: 'warning',
+  RESOLVED: 'success',
+};

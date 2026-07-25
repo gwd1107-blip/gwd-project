@@ -4,12 +4,13 @@
  * 对应设计：docs/02-开发计划.md R1
  */
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+import { UserRole } from '@prisma/client';
 import { TokenPayload } from './auth.service';
 
 export interface CurrentUserType {
   id: number;
   userid: string;
-  role: string;
+  role: UserRole;
 }
 
 export const CurrentUser = createParamDecorator(

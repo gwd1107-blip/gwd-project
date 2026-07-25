@@ -15,6 +15,7 @@
       </el-row>
       <el-card style="margin-top: 16px">
         <el-button type="primary" @click="router.push('/tickets')">进入工单列表</el-button>
+        <el-button @click="router.push('/problems')" style="margin-left: 12px">进入问题管理</el-button>
       </el-card>
     </el-main>
   </el-container>

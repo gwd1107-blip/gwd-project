@@ -146,8 +146,9 @@ model Ticket {
   createdAt         DateTime     @default(now()) @map("created_at")
   updatedAt         DateTime     @updatedAt @map("updated_at")
 
-  category Category      @relation(fields: [categoryId], references: [id])
-  events   TicketEvent[]
+  category        Category         @relation(fields: [categoryId], references: [id])
+  events          TicketEvent[]
+  problemIncidents ProblemIncident[]
 
   @@index([status])
   @@index([agentUserid, status])
@@ -172,4 +173,49 @@ model TicketEvent {
   @@index([ticketId])
   @@index([createdAt])
   @@map("ticket_events")
+}
+
+enum ProblemStatus {
+  INVESTIGATING   @map("investigating")   // 调查中
+  ROOT_CAUSE_FOUND @map("root_cause_found") // 已定位根因
+  KNOWN_ERROR     @map("known_error")     // 已知错误
+  RESOLVED        @map("resolved")        // 已解决
+
+  @@map("problem_status")
+}
+
+model Problem {
+  id           Int           @id @default(autoincrement())
+  title        String
+  symptom      String        // 症状
+  rootCause    String?       @map("root_cause") // 根本原因
+  workaround   String?       // 临时方案
+  finalSolution String?      @map("final_solution") // 最终解决方案
+  status       ProblemStatus @default(INVESTIGATING)
+  ownerUserid  String        @map("owner_userid") // 负责人
+  isKnownError Boolean       @default(false) @map("is_known_error")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  incidents ProblemIncident[]
+
+  @@index([status])
+  @@index([ownerUserid])
+  @@map("problems")
+}
+
+model ProblemIncident {
+  id         Int      @id @default(autoincrement())
+  problemId  Int      @map("problem_id")
+  ticketId   Int      @map("ticket_id")
+  meToo      Boolean  @default(false) @map("me_too") // “我也遇到了”标记
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  ticket  Ticket  @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@unique([problemId, ticketId])
+  @@index([problemId])
+  @@index([ticketId])
+  @@map("problem_incidents")
 }

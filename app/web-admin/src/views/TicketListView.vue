@@ -58,6 +58,13 @@
           <el-button v-if="selected.status === 'IN_PROGRESS'" @click="openSuspend">挂起</el-button>
           <el-button v-if="selected.status === 'SUSPENDED'" @click="resume">恢复</el-button>
           <el-button v-if="selected.status === 'WAITING_CONFIRM'" @click="reject">打回</el-button>
+          <el-button
+            v-if="['PENDING', 'IN_PROGRESS', 'WAITING_CONFIRM'].includes(selected.status)"
+            type="danger"
+            @click="openUpgrade"
+          >
+            升级为问题
+          </el-button>
         </div>
       </div>
     </el-drawer>
@@ -96,6 +103,27 @@
         <el-button type="primary" @click="reasonConfirm">确定</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="upgradeDialog" title="升级为问题" width="400px">
+      <el-form label-width="80px">
+        <el-form-item label="标题">
+          <el-input v-model="upgradeForm.title" />
+        </el-form-item>
+        <el-form-item label="症状">
+          <el-input v-model="upgradeForm.symptom" type="textarea" rows="2" placeholder="描述现象" />
+        </el-form-item>
+        <el-form-item label="根因">
+          <el-input v-model="upgradeForm.rootCause" type="textarea" rows="2" placeholder="可选" />
+        </el-form-item>
+        <el-form-item label="临时方案">
+          <el-input v-model="upgradeForm.workaround" type="textarea" rows="2" placeholder="可选" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="upgradeDialog = false">取消</el-button>
+        <el-button type="primary" @click="upgrade">确定</el-button>
+      </template>
+    </el-dialog>
   </el-container>
 </template>
 
@@ -119,6 +147,9 @@ const resolveForm = ref({ solution: '' });
 const reasonDialog = ref(false);
 const reasonForm = ref({ reason: '' });
 let reasonAction: 'suspend' | 'reject' | null = null;
+
+const upgradeDialog = ref(false);
+const upgradeForm = ref({ title: '', symptom: '', rootCause: '', workaround: '' });
 
 onMounted(async () => {
   const me = await api('/api/users/me');
@@ -217,6 +248,31 @@ async function reasonConfirm() {
   }
   reasonDialog.value = false;
   await refreshSelected();
+}
+
+function openUpgrade() {
+  upgradeForm.value = {
+    title: selected.value?.title ?? '',
+    symptom: selected.value?.description ?? '',
+    rootCause: '',
+    workaround: '',
+  };
+  upgradeDialog.value = true;
+}
+
+async function upgrade() {
+  await api('/api/problems', {
+    method: 'POST',
+    body: JSON.stringify({
+      title: upgradeForm.value.title,
+      symptom: upgradeForm.value.symptom,
+      rootCause: upgradeForm.value.rootCause || undefined,
+      workaround: upgradeForm.value.workaround || undefined,
+      ticketId: selected.value.id,
+    }),
+  });
+  upgradeDialog.value = false;
+  router.push('/problems');
 }
 </script>
 
