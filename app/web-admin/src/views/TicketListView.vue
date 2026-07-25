@@ -28,6 +28,21 @@
 
     <el-drawer v-model="drawer" :title="`工单 ${selected?.ticketNo}`" size="50%">
       <div v-if="selected">
+        <div class="top-actions" v-if="canOperate">
+          <el-button v-if="selected.status === 'PENDING'" type="primary" @click="openAssign">接单/指派</el-button>
+          <el-button v-if="selected.status === 'IN_PROGRESS'" @click="openResolve">标记解决</el-button>
+          <el-button v-if="selected.status === 'IN_PROGRESS'" @click="openSuspend">挂起</el-button>
+          <el-button v-if="selected.status === 'SUSPENDED'" @click="resume">恢复</el-button>
+          <el-button v-if="selected.status === 'WAITING_CONFIRM'" @click="reject">打回</el-button>
+          <el-button
+            v-if="['PENDING', 'IN_PROGRESS', 'WAITING_CONFIRM'].includes(selected.status)"
+            type="danger"
+            @click="openUpgrade"
+          >
+            升级为问题
+          </el-button>
+        </div>
+
         <el-descriptions :column="2" border>
           <el-descriptions-item label="标题">{{ selected.title }}</el-descriptions-item>
           <el-descriptions-item label="请求人">{{ selected.requesterUserid }}</el-descriptions-item>
@@ -288,4 +303,5 @@ async function upgrade() {
 .comment { color: #666; margin: 4px 0 0; }
 .reply-box { display: flex; gap: 8px; margin-top: 16px; }
 .actions { margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap; }
+.top-actions { margin-bottom: 16px; display: flex; gap: 8px; flex-wrap: wrap; }
 </style>
