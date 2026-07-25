@@ -1,4 +1,4 @@
-FROM node-base:20
+FROM node:20-alpine
 
 # Alpine 镜像缺 libssl，Prisma 运行时需要
 RUN apk add --no-cache openssl

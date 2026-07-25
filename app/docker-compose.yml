@@ -49,7 +49,7 @@ services:
     command: ['npm', 'run', 'start:dev']
 
   web-h5:
-    image: app-web-h5:latest
+    build: ./web-h5
     container_name: itsm-web-h5
     environment:
       VITE_API_BASE: http://localhost:${SERVER_PORT:-3000}
