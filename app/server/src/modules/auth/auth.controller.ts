@@ -4,10 +4,12 @@
  * 对应设计：docs/02-开发计划.md R1
  */
 import { Body, Controller, Post } from '@nestjs/common';
+import { IsString } from 'class-validator';
 import { AuthService } from './auth.service';
 import { Public } from './public.decorator';
 
 class LoginDto {
+  @IsString()
   userid!: string;
 }
 

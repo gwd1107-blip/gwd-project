@@ -51,6 +51,57 @@ enum UserRole {
   ADMIN
 }
 
+enum TicketStatus {
+  PENDING          @map("pending")          // 待处理
+  IN_PROGRESS      @map("in_progress")      // 处理中
+  WAITING_CONFIRM  @map("waiting_confirm")  // 待确认
+  CLOSED           @map("closed")           // 已关闭
+  SUSPENDED        @map("suspended")        // 挂起
+  CANCELLED        @map("cancelled")        // 已取消
+
+  @@map("ticket_status")
+}
+
+enum Urgency {
+  LOW     @map("low")    // 不紧急
+  MEDIUM  @map("medium") // 有点急
+  HIGH    @map("high")   // 很急
+
+  @@map("urgency")
+}
+
+enum Impact {
+  ONLY_ME  @map("only_me")  // 仅我
+  SEVERAL  @map("several")  // 多人
+  ALL      @map("all")      // 全公司
+
+  @@map("impact")
+}
+
+enum Priority {
+  P1 @map("p1")
+  P2 @map("p2")
+  P3 @map("p3")
+  P4 @map("p4")
+
+  @@map("priority")
+}
+
+enum TicketEventAction {
+  CREATE   @map("create")
+  ASSIGN   @map("assign")
+  REPLY    @map("reply")
+  SUSPEND  @map("suspend")
+  RESOLVE  @map("resolve")
+  CLOSE    @map("close")
+  CANCEL   @map("cancel")
+  TRANSFER @map("transfer")
+  RESUME   @map("resume")
+  REJECT   @map("reject")
+
+  @@map("ticket_event_action")
+}
+
 model Category {
   id        Int      @id @default(autoincrement())
   parentId  Int?     @map("parent_id")
@@ -62,8 +113,63 @@ model Category {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  tickets Ticket[]
+
   @@index([parentId])
   @@index([level, enabled])
   @@unique([parentId, name], name: "category_parent_name")
   @@map("categories")
+}
+
+model Ticket {
+  id                Int          @id @default(autoincrement())
+  ticketNo          String       @unique @map("ticket_no") // 如 INC-20260725-003
+  title             String
+  description       String
+  attachments       String[]     @default([])
+  categoryId        Int          @map("category_id")
+  status            TicketStatus @default(PENDING)
+  urgency           Urgency
+  impact            Impact?
+  priority          Priority? // 系统计算，设计 3.5
+  requesterUserid   String       @map("requester_userid")
+  substituteUserid  String?      @map("substitute_userid")
+  agentUserid       String?      @map("agent_userid")
+  responseDeadline  DateTime?    @map("response_deadline")
+  resolveDeadline   DateTime?    @map("resolve_deadline")
+  actualResponseAt  DateTime?    @map("actual_response_at")
+  actualResolveAt   DateTime?    @map("actual_resolve_at")
+  solution          String?
+  rating            Int?
+  ratingComment     String?      @map("rating_comment")
+  relatedProblemId  Int?         @map("related_problem_id")
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
+
+  category Category      @relation(fields: [categoryId], references: [id])
+  events   TicketEvent[]
+
+  @@index([status])
+  @@index([agentUserid, status])
+  @@index([requesterUserid])
+  @@index([priority])
+  @@map("tickets")
+}
+
+model TicketEvent {
+  id          Int               @id @default(autoincrement())
+  ticketId    Int               @map("ticket_id")
+  actorUserid String            @map("actor_userid")
+  action      TicketEventAction
+  fromStatus  TicketStatus?     @map("from_status")
+  toStatus    TicketStatus?     @map("to_status")
+  comment     String?
+  attachments String[]          @default([])
+  createdAt   DateTime          @default(now()) @map("created_at")
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@index([createdAt])
+  @@map("ticket_events")
 }
