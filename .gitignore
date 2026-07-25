@@ -1,0 +1,29 @@
+# 依赖与构建产物
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+
+# 环境变量（含企微密钥，绝不提交）
+.env
+.env.local
+.env.*.local
+
+# 临时文件（WebBridge 请求体、截图等）
+.tmp/
+
+# 日志与运行时
+logs/
+*.log
+*.pid
+
+# 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
