@@ -1,0 +1,80 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: itsm-postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-itsm}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-itsm}
+      POSTGRES_DB: ${DB_NAME:-itsm}
+    ports:
+      - '${DB_PORT:-5432}:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: itsm-redis
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build: ./server
+    container_name: itsm-server
+    environment:
+      DATABASE_URL: postgres://${DB_USER:-itsm}:${DB_PASSWORD:-itsm}@postgres:5432/${DB_NAME:-itsm}
+      REDIS_URL: redis://redis:6379
+      PORT: 3000
+      NODE_ENV: development
+    ports:
+      - '${SERVER_PORT:-3000}:3000'
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+      - /app/prisma/generated
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ['npm', 'run', 'start:dev']
+
+  web-h5:
+    image: app-web-h5:latest
+    container_name: itsm-web-h5
+    environment:
+      VITE_API_BASE: http://localhost:${SERVER_PORT:-3000}
+    ports:
+      - '${H5_PORT:-5173}:5173'
+    volumes:
+      - ./web-h5:/app
+      - /app/node_modules
+    depends_on:
+      - server
+    command: ['npm', 'run', 'dev']
+
+  web-admin:
+    build: ./web-admin
+    container_name: itsm-web-admin
+    environment:
+      VITE_API_BASE: http://localhost:${SERVER_PORT:-3000}
+    ports:
+      - '${ADMIN_PORT:-5174}:5174'
+    volumes:
+      - ./web-admin:/app
+      - /app/node_modules
+    depends_on:
+      - server
+    command: ['npm', 'run', 'dev']
+
+volumes:
+  pgdata:

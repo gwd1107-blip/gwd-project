@@ -1,0 +1,52 @@
+// 数据模型定义：docs/01-MVP产品设计方案.md 第 6 节
+// R0 只建用户/部门域，为后续认证与业务开发做准备。
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Department {
+  id          Int    @id @default(autoincrement())
+  wecomDeptId String @unique @map("wecom_dept_id")
+  name        String
+  parentId    String? @map("parent_id")
+  order       Int     @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  users User[]
+
+  @@index([parentId])
+  @@map("departments")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  userid    String   @unique // 企微 userid，设计 2.2
+  name      String
+  avatar    String?
+  role      UserRole @default(EMPLOYEE) // 设计 2.3
+  skillTags String[] @default([]) @map("skill_tags") // 技术员分组，V1 用标签实现
+  enabled   Boolean  @default(true) // 离职同步时置 false
+  deptId    Int      @map("dept_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  department Department @relation(fields: [deptId], references: [id])
+
+  @@index([deptId])
+  @@index([role, enabled])
+  @@map("users")
+}
+
+enum UserRole {
+  EMPLOYEE
+  TECHNICIAN
+  ADMIN
+}
