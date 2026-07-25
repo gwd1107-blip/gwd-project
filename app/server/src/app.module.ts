@@ -10,6 +10,7 @@ import { HealthModule } from './modules/health/health.module';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { TicketModule } from './modules/ticket/ticket.module';
+import { CategoryModule } from './modules/category/category.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { TicketModule } from './modules/ticket/ticket.module';
     HealthModule,
     UserModule,
     AuthModule,
+    CategoryModule,
     TicketModule,
   ],
 })
