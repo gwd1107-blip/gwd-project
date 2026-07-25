@@ -9,12 +9,12 @@
           v-for="t in tickets"
           :key="t.id"
           :title="t.title"
-          :label="`${t.ticketNo} · ${statusText(t.status)}`"
+          :label="`${t.ticketNo} · ${statusText[t.status]}`"
           is-link
           @click="router.push(`/tickets/${t.id}`)"
         >
           <template #right-icon>
-            <van-tag :type="tagType(t.status)">{{ statusText(t.status) }}</van-tag>
+            <van-tag :type="tagType(t.status)">{{ statusText[t.status] }}</van-tag>
           </template>
         </van-cell>
       </van-cell-group>

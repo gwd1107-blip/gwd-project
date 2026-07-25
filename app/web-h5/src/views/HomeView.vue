@@ -1,7 +1,7 @@
 <template>
   <div class="home-page">
     <h2>工作台</h2>
-    <p v-if="user">{{ user.name }} · {{ roleText(user.role) }}</p>
+    <p v-if="user">{{ user.name }} · {{ roleText[user.role] }}</p>
     <div class="actions">
       <van-button type="primary" block @click="router.push('/tickets/create')">我要提单</van-button>
       <van-button type="success" block @click="router.push('/tickets')">我的工单</van-button>

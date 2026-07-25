@@ -4,8 +4,8 @@
     <van-cell-group v-if="ticket" inset>
       <van-cell title="单号" :value="ticket.ticketNo" />
       <van-cell title="标题" :value="ticket.title" />
-      <van-cell title="状态" :value="statusText(ticket.status)" />
-      <van-cell title="优先级" :value="ticket.priority ? priorityText(ticket.priority) : '-'" />
+      <van-cell title="状态" :value="statusText[ticket.status]" />
+      <van-cell title="优先级" :value="ticket.priority ? priorityText[ticket.priority] : '-'" />
       <van-cell title="处理人" :value="ticket.agentUserid || '未指派'" />
     </van-cell-group>
 
