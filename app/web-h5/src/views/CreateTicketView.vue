@@ -20,7 +20,7 @@
         label="问题分类"
         placeholder="请选择"
         readonly
-        @click="categoryPicker = true"
+        @click="openCategoryPicker"
       />
       <van-cell title="紧急程度">
         <template #right-icon>
@@ -37,11 +37,24 @@
     </div>
 
     <van-popup v-model:show="categoryPicker" round position="bottom">
-      <van-picker
-        :columns="categoryColumns"
-        @confirm="onCategoryConfirm"
-        @cancel="categoryPicker = false"
-      />
+      <div class="category-popup">
+        <div class="category-header">
+          <span @click="categoryPicker = false">取消</span>
+          <span class="ok" @click="confirmCategory">确定</span>
+        </div>
+        <div class="category-row">
+          <label>大类</label>
+          <select v-model="pickerParent" @change="pickerChild = null">
+            <option v-for="p in categories" :key="p.id" :value="p.id">{{ p.name }}</option>
+          </select>
+        </div>
+        <div class="category-row">
+          <label>小类</label>
+          <select v-model="pickerChild">
+            <option v-for="c in childOptions" :key="c.id" :value="c.id">{{ c.name }}</option>
+          </select>
+        </div>
+      </div>
     </van-popup>
   </div>
 </template>
@@ -55,7 +68,6 @@ import {
   CellGroup as VanCellGroup,
   Field as VanField,
   NavBar as VanNavBar,
-  Picker as VanPicker,
   Popup as VanPopup,
   Radio as VanRadio,
   RadioGroup as VanRadioGroup,
@@ -65,6 +77,8 @@ import { api } from '../api';
 const router = useRouter();
 const categories = ref<{ id: number; name: string; children: { id: number; name: string }[] }[]>([]);
 const categoryPicker = ref(false);
+const pickerParent = ref<number | null>(null);
+const pickerChild = ref<number | null>(null);
 const form = ref({
   title: '',
   description: '',
@@ -77,13 +91,10 @@ onMounted(async () => {
   categories.value = await res.json();
 });
 
-const categoryColumns = computed(() =>
-  categories.value.map((p) => ({
-    text: p.name,
-    value: p.id,
-    children: p.children.map((c) => ({ text: c.name, value: c.id })),
-  })),
-);
+const childOptions = computed(() => {
+  const parent = categories.value.find((p) => p.id === pickerParent.value);
+  return parent?.children ?? [];
+});
 
 const categoryText = computed(() => {
   for (const p of categories.value) {
@@ -93,8 +104,15 @@ const categoryText = computed(() => {
   return '';
 });
 
-function onCategoryConfirm({ selectedOptions }: { selectedOptions: { value: number }[] }) {
-  form.value.categoryId = selectedOptions[selectedOptions.length - 1].value;
+function openCategoryPicker() {
+  const currentParent = categories.value.find((p) => p.children.some((c) => c.id === form.value.categoryId));
+  pickerParent.value = currentParent?.id ?? (categories.value[0]?.id ?? null);
+  pickerChild.value = form.value.categoryId;
+  categoryPicker.value = true;
+}
+
+function confirmCategory() {
+  form.value.categoryId = pickerChild.value;
   categoryPicker.value = false;
 }
 
@@ -118,5 +136,33 @@ async function submit() {
 }
 .submit {
   padding: 24px;
+}
+.category-popup {
+  padding: 16px;
+}
+.category-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  color: #666;
+}
+.category-header .ok {
+  color: #1989fa;
+}
+.category-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.category-row label {
+  width: 48px;
+}
+.category-row select {
+  flex: 1;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ebedf0;
+  border-radius: 4px;
 }
 </style>
