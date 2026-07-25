@@ -36,23 +36,43 @@
       <van-button type="primary" block @click="submit">提交工单</van-button>
     </div>
 
-    <van-popup v-model:show="categoryPicker" round position="bottom">
+    <van-popup v-model:show="categoryPicker" round position="bottom" :style="{ height: '60%' }">
       <div class="category-popup">
-        <div class="category-header">
-          <span @click="categoryPicker = false">取消</span>
-          <span class="ok" @click="confirmCategory">确定</span>
+        <div class="category-title">
+          <span v-if="step === 'child'" @click="step = 'parent'">← 返回大类</span>
+          <span v-else>选择问题分类</span>
+          <span class="close" @click="categoryPicker = false">关闭</span>
         </div>
-        <div class="category-row">
-          <label>大类</label>
-          <select v-model="pickerParent" @change="pickerChild = null">
-            <option v-for="p in categories" :key="p.id" :value="p.id">{{ p.name }}</option>
-          </select>
+
+        <div v-if="step === 'parent'" class="category-grid">
+          <van-button
+            v-for="p in categories"
+            :key="p.id"
+            :type="pickerParent === p.id ? 'primary' : 'default'"
+            block
+            @click="selectParent(p.id)"
+          >
+            {{ p.name }}
+          </van-button>
         </div>
-        <div class="category-row">
-          <label>小类</label>
-          <select v-model="pickerChild">
-            <option v-for="c in childOptions" :key="c.id" :value="c.id">{{ c.name }}</option>
-          </select>
+
+        <div v-else class="category-grid">
+          <p class="parent-hint">{{ parentName }}</p>
+          <van-button
+            v-for="c in childOptions"
+            :key="c.id"
+            :type="pickerChild === c.id ? 'primary' : 'default'"
+            block
+            @click="selectChild(c.id)"
+          >
+            {{ c.name }}
+          </van-button>
+        </div>
+
+        <div class="category-confirm">
+          <van-button type="primary" block :disabled="!pickerChild" @click="confirmCategory">
+            确定
+          </van-button>
         </div>
       </div>
     </van-popup>
@@ -77,6 +97,7 @@ import { api } from '../api';
 const router = useRouter();
 const categories = ref<{ id: number; name: string; children: { id: number; name: string }[] }[]>([]);
 const categoryPicker = ref(false);
+const step = ref<'parent' | 'child'>('parent');
 const pickerParent = ref<number | null>(null);
 const pickerChild = ref<number | null>(null);
 const form = ref({
@@ -96,6 +117,10 @@ const childOptions = computed(() => {
   return parent?.children ?? [];
 });
 
+const parentName = computed(() => {
+  return categories.value.find((p) => p.id === pickerParent.value)?.name ?? '';
+});
+
 const categoryText = computed(() => {
   for (const p of categories.value) {
     const c = p.children.find((x) => x.id === form.value.categoryId);
@@ -106,9 +131,20 @@ const categoryText = computed(() => {
 
 function openCategoryPicker() {
   const currentParent = categories.value.find((p) => p.children.some((c) => c.id === form.value.categoryId));
-  pickerParent.value = currentParent?.id ?? (categories.value[0]?.id ?? null);
+  pickerParent.value = currentParent?.id ?? null;
   pickerChild.value = form.value.categoryId;
+  step.value = pickerParent.value ? 'child' : 'parent';
   categoryPicker.value = true;
+}
+
+function selectParent(id: number) {
+  pickerParent.value = id;
+  pickerChild.value = null;
+  step.value = 'child';
+}
+
+function selectChild(id: number) {
+  pickerChild.value = id;
 }
 
 function confirmCategory() {
@@ -138,31 +174,34 @@ async function submit() {
   padding: 24px;
 }
 .category-popup {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   padding: 16px;
+  box-sizing: border-box;
 }
-.category-header {
+.category-title {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   margin-bottom: 16px;
+  font-size: 16px;
+}
+.category-title .close {
   color: #666;
 }
-.category-header .ok {
-  color: #1989fa;
-}
-.category-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-.category-row label {
-  width: 48px;
-}
-.category-row select {
+.category-grid {
   flex: 1;
-  padding: 10px;
-  font-size: 16px;
-  border: 1px solid #ebedf0;
-  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+.parent-hint {
+  color: #666;
+  margin: 0;
+}
+.category-confirm {
+  margin-top: 16px;
 }
 </style>
