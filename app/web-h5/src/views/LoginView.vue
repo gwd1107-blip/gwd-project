@@ -6,6 +6,7 @@
       <van-button type="primary" block @click="login('emp001')">员工 · 张三</van-button>
       <van-button type="success" block @click="login('tech001')">技术员 · 李四</van-button>
       <van-button type="warning" block @click="login('admin001')">管理员 · 王五</van-button>
+      <van-button type="primary" plain block @click="wecomLogin">企业微信登录</van-button>
     </div>
   </div>
 </template>
@@ -31,6 +32,12 @@ async function login(userid: string) {
   localStorage.setItem('itsm_token', data.token);
   localStorage.setItem('itsm_user', JSON.stringify(data.user));
   router.push('/home');
+}
+
+async function wecomLogin() {
+  const res = await fetch(`${API_BASE}/api/wecom/oauth/h5-url`);
+  const { url } = await res.json();
+  window.location.href = url;
 }
 </script>
 

@@ -35,4 +35,35 @@ export class UserService {
   isRole(user: { role: UserRole }, role: UserRole) {
     return user.role === role;
   }
+
+  /** 企微 OAuth 首次登录时创建/更新用户 */
+  async upsertWecomUser(data: {
+    userid: string;
+    name: string;
+    avatar?: string;
+    deptId?: number;
+    role?: UserRole;
+  }) {
+    const deptId = data.deptId ?? (await this.ensureDefaultDept());
+    return this.prisma.user.upsert({
+      where: { userid: data.userid },
+      update: { name: data.name, avatar: data.avatar },
+      create: {
+        userid: data.userid,
+        name: data.name,
+        avatar: data.avatar,
+        role: data.role ?? UserRole.EMPLOYEE,
+        deptId,
+      },
+    });
+  }
+
+  private async ensureDefaultDept() {
+    const dept = await this.prisma.department.upsert({
+      where: { wecomDeptId: 'dept_default' },
+      update: {},
+      create: { wecomDeptId: 'dept_default', name: '默认部门', order: 999 },
+    });
+    return dept.id;
+  }
 }

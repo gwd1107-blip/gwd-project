@@ -7,6 +7,7 @@
         <el-button type="primary" @click="login('emp001')">员工 · 张三</el-button>
         <el-button type="success" @click="login('tech001')">技术员 · 李四</el-button>
         <el-button type="warning" @click="login('admin001')">管理员 · 王五</el-button>
+        <el-button @click="wecomLogin">企业微信扫码登录</el-button>
       </div>
     </el-card>
   </div>
@@ -32,6 +33,12 @@ async function login(userid: string) {
   localStorage.setItem('itsm_token', data.token);
   localStorage.setItem('itsm_user', JSON.stringify(data.user));
   router.push('/dashboard');
+}
+
+async function wecomLogin() {
+  const res = await fetch(`${API_BASE}/api/wecom/oauth/admin-url`);
+  const { url } = await res.json();
+  window.location.href = url;
 }
 </script>
 

@@ -9,6 +9,7 @@ import DashboardView from '../views/DashboardView.vue';
 import TicketListView from '../views/TicketListView.vue';
 import ProblemListView from '../views/ProblemListView.vue';
 import NotificationsView from '../views/NotificationsView.vue';
+import WecomCallbackView from '../views/WecomCallbackView.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -19,6 +20,7 @@ const router = createRouter({
     { path: '/tickets', component: TicketListView, meta: { requiresAuth: true } },
     { path: '/problems', component: ProblemListView, meta: { requiresAuth: true } },
     { path: '/notifications', component: NotificationsView, meta: { requiresAuth: true } },
+    { path: '/wecom-callback', component: WecomCallbackView, meta: { public: true } },
   ],
 });
 

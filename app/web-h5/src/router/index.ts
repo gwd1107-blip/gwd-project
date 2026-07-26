@@ -11,6 +11,7 @@ import TicketListView from '../views/TicketListView.vue';
 import TicketDetailView from '../views/TicketDetailView.vue';
 import KnowledgeBaseView from '../views/KnowledgeBaseView.vue';
 import NotificationsView from '../views/NotificationsView.vue';
+import WecomCallbackView from '../views/WecomCallbackView.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -23,6 +24,7 @@ const router = createRouter({
     { path: '/tickets/:id', component: TicketDetailView, meta: { requiresAuth: true } },
     { path: '/knowledge', component: KnowledgeBaseView, meta: { requiresAuth: true } },
     { path: '/notifications', component: NotificationsView, meta: { requiresAuth: true } },
+    { path: '/wecom-callback', component: WecomCallbackView, meta: { public: true } },
   ],
 });
 

@@ -6,6 +6,7 @@
 import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { NotificationStatus, NotificationType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { WecomMessageService } from '../wecom/wecom.message.service';
 import { NotifyQueue } from './notify.queue';
 
 export interface NotifyInput {
@@ -19,6 +20,7 @@ export class NotifyService {
   constructor(
     private readonly prisma: PrismaService,
     @Inject(forwardRef(() => NotifyQueue)) private readonly queue: NotifyQueue,
+    private readonly wecomMessage: WecomMessageService,
   ) {}
 
   /** 创建通知并入队 */
@@ -79,11 +81,26 @@ export class NotifyService {
     if (!n) throw new NotFoundException('通知不存在');
     if (n.status === NotificationStatus.SENT) return n;
 
-    // 模拟发送成功；R7 时这里调用企微消息 API
-    console.log(`[notify] sent to ${n.recipientUserid}: ${n.title}`);
+    let channel = 'in_app';
+    try {
+      await this.wecomMessage.sendTemplateCard({
+        touser: n.recipientUserid,
+        title: n.title,
+        content: n.content,
+        url: process.env.WECOM_H5_BASE_URL
+          ? `${process.env.WECOM_H5_BASE_URL}/tickets/${(n.payload as any)?.ticketId ?? ''}`
+          : undefined,
+      });
+      channel = 'wecom';
+    } catch (e: any) {
+      // 企微未配置或发送失败时降级为站内通知
+      console.log(`[notify] wecom send failed, fallback in_app: ${e?.message}`);
+    }
+
+    console.log(`[notify] sent to ${n.recipientUserid} via ${channel}: ${n.title}`);
     return this.prisma.notification.update({
       where: { id },
-      data: { status: NotificationStatus.SENT, lastError: null },
+      data: { status: NotificationStatus.SENT, lastError: null, channel },
     });
   }
 

@@ -14,6 +14,7 @@ import { CategoryModule } from './modules/category/category.module';
 import { ProblemModule } from './modules/problem/problem.module';
 import { KbModule } from './modules/kb/kb.module';
 import { NotifyModule } from './modules/notify/notify.module';
+import { WecomModule } from './modules/wecom/wecom.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { NotifyModule } from './modules/notify/notify.module';
     ProblemModule,
     KbModule,
     NotifyModule,
+    WecomModule,
   ],
 })
 export class AppModule {}
