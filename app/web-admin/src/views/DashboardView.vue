@@ -4,6 +4,7 @@
       <h3>IT 服务台 · 管理端</h3>
       <div>
         <span v-if="user">{{ user.name }} · {{ user.role }}</span>
+        <el-button link @click="router.push('/notifications')">消息{{ unreadCount ? `(${unreadCount})` : '' }}</el-button>
         <el-button link @click="logout">退出</el-button>
       </div>
     </el-header>
@@ -29,10 +30,13 @@ import { api } from '../api';
 const router = useRouter();
 const user = ref<any>(null);
 const stats = ref({ todo: 0, today: 0, overdue: 0 });
+const unreadCount = ref(0);
 
 onMounted(async () => {
   const me = await api('/api/users/me');
   user.value = await me.json();
+  const unread = await api('/api/notifications/unread-count');
+  unreadCount.value = await unread.json();
   const res = await api('/api/tickets');
   const tickets: any[] = await res.json();
   const today = new Date().toDateString();

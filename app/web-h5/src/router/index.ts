@@ -10,6 +10,7 @@ import CreateTicketView from '../views/CreateTicketView.vue';
 import TicketListView from '../views/TicketListView.vue';
 import TicketDetailView from '../views/TicketDetailView.vue';
 import KnowledgeBaseView from '../views/KnowledgeBaseView.vue';
+import NotificationsView from '../views/NotificationsView.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -21,6 +22,7 @@ const router = createRouter({
     { path: '/tickets', component: TicketListView, meta: { requiresAuth: true } },
     { path: '/tickets/:id', component: TicketDetailView, meta: { requiresAuth: true } },
     { path: '/knowledge', component: KnowledgeBaseView, meta: { requiresAuth: true } },
+    { path: '/notifications', component: NotificationsView, meta: { requiresAuth: true } },
   ],
 });
 

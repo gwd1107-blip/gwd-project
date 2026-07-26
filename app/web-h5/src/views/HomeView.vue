@@ -7,6 +7,7 @@
       <van-button type="success" block @click="router.push('/tickets')">我的工单</van-button>
       <van-button type="success" block @click="router.push('/knowledge')">查知识</van-button>
       <van-button type="warning" block @click="router.push('/knowledge?tab=known')">已知问题</van-button>
+      <van-button type="primary" plain block @click="router.push('/notifications')">消息 {{ unreadCount ? `(${unreadCount})` : '' }}</van-button>
       <van-button type="danger" block v-if="user?.role !== 'EMPLOYEE'">待我处理</van-button>
       <van-button plain block @click="logout">退出登录</van-button>
     </div>
@@ -22,10 +23,13 @@ import { roleText } from '../utils';
 
 const router = useRouter();
 const user = ref<{ name: string; role: string } | null>(null);
+const unreadCount = ref(0);
 
 onMounted(async () => {
   const res = await api('/api/users/me');
   user.value = await res.json();
+  const unread = await api('/api/notifications/unread-count');
+  unreadCount.value = await unread.json();
 });
 
 function logout() {

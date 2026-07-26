@@ -8,6 +8,7 @@ import LoginView from '../views/LoginView.vue';
 import DashboardView from '../views/DashboardView.vue';
 import TicketListView from '../views/TicketListView.vue';
 import ProblemListView from '../views/ProblemListView.vue';
+import NotificationsView from '../views/NotificationsView.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -17,6 +18,7 @@ const router = createRouter({
     { path: '/dashboard', component: DashboardView, meta: { requiresAuth: true } },
     { path: '/tickets', component: TicketListView, meta: { requiresAuth: true } },
     { path: '/problems', component: ProblemListView, meta: { requiresAuth: true } },
+    { path: '/notifications', component: NotificationsView, meta: { requiresAuth: true } },
   ],
 });
 

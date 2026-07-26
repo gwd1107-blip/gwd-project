@@ -4,9 +4,10 @@
  * 对应设计：docs/01-MVP产品设计方案.md 第 3 节
  */
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Impact, Priority, TicketEventAction, TicketStatus, UserRole } from '@prisma/client';
+import { Impact, NotificationType, Priority, TicketEventAction, TicketStatus, UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { KbService } from '../kb/kb.service';
+import { NotifyService } from '../notify/notify.service';
 import { assertTransitionAllowed } from './ticket.state-machine';
 import { computeDeadlines, computePriority } from './ticket.policy';
 import { CreateTicketDto } from './dto/create-ticket.dto';
@@ -21,6 +22,7 @@ export class TicketService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly kbService: KbService,
+    private readonly notifyService: NotifyService,
   ) {}
 
   /** 提单：创建时只记录紧急程度，优先级在接单时计算（设计 3.5） */
@@ -70,6 +72,7 @@ export class TicketService {
       }),
       this.recordEvent(id, actor.userid, TicketEventAction.ASSIGN, ticket.status, TicketStatus.IN_PROGRESS, null),
     ]);
+    await this.notifyStatus(updated, '已指派', updated.agentUserid ?? undefined);
     return updated;
   }
 
@@ -86,7 +89,9 @@ export class TicketService {
     const ticket = await this.findById(id);
     this.assertTechOrAdmin(actor.role);
     assertTransitionAllowed(ticket.status, TicketStatus.SUSPENDED);
-    return this.transition(id, TicketStatus.SUSPENDED, TicketEventAction.SUSPEND, actor.userid, dto.reason);
+    const updated = await this.transition(id, TicketStatus.SUSPENDED, TicketEventAction.SUSPEND, actor.userid, dto.reason);
+    await this.notifyStatus(updated, '挂起');
+    return updated;
   }
 
   /** 恢复：挂起 → 处理中 */
@@ -94,7 +99,9 @@ export class TicketService {
     const ticket = await this.findById(id);
     this.assertTechOrAdmin(actor.role);
     assertTransitionAllowed(ticket.status, TicketStatus.IN_PROGRESS);
-    return this.transition(id, TicketStatus.IN_PROGRESS, TicketEventAction.RESUME, actor.userid, null);
+    const updated = await this.transition(id, TicketStatus.IN_PROGRESS, TicketEventAction.RESUME, actor.userid, null);
+    await this.notifyStatus(updated, '恢复处理');
+    return updated;
   }
 
   /** 解决：处理中 → 待确认，必须填写解决方案（设计 3.6） */
@@ -111,6 +118,7 @@ export class TicketService {
       }),
       this.recordEvent(id, actor.userid, TicketEventAction.RESOLVE, ticket.status, TicketStatus.WAITING_CONFIRM, null),
     ]);
+    await this.notifyStatus(updated, '待确认');
     return updated;
   }
 
@@ -136,6 +144,7 @@ export class TicketService {
       await this.kbService.createFromTicket(ticket);
     }
 
+    await this.notifyStatus(updated, '已关闭');
     return updated;
   }
 
@@ -146,7 +155,9 @@ export class TicketService {
       throw new ForbiddenException('只能取消自己提交的工单');
     }
     assertTransitionAllowed(ticket.status, TicketStatus.CANCELLED);
-    return this.transition(id, TicketStatus.CANCELLED, TicketEventAction.CANCEL, actor.userid, dto.reason);
+    const updated = await this.transition(id, TicketStatus.CANCELLED, TicketEventAction.CANCEL, actor.userid, dto.reason);
+    await this.notifyStatus(updated, '已取消', updated.agentUserid ?? undefined);
+    return updated;
   }
 
   /** 转交：更换技术员，状态不变 */
@@ -161,6 +172,7 @@ export class TicketService {
       include: { category: true, events: true },
     });
     await this.recordEvent(id, actor.userid, TicketEventAction.TRANSFER, null, null, `转交给 ${dto.agentUserid}`);
+    await this.notifyStatus(updated, '已转交', dto.agentUserid);
     return updated;
   }
 
@@ -169,7 +181,9 @@ export class TicketService {
     const ticket = await this.findById(id);
     this.assertTechOrAdmin(actor.role);
     assertTransitionAllowed(ticket.status, TicketStatus.IN_PROGRESS);
-    return this.transition(id, TicketStatus.IN_PROGRESS, TicketEventAction.REJECT, actor.userid, dto.reason);
+    const updated = await this.transition(id, TicketStatus.IN_PROGRESS, TicketEventAction.REJECT, actor.userid, dto.reason);
+    await this.notifyStatus(updated, '打回处理', updated.agentUserid ?? undefined);
+    return updated;
   }
 
   /** 列表：管理员看全部，员工看自己，技术员看指派给自己的 */
@@ -248,6 +262,18 @@ export class TicketService {
       where: { createdAt: { gte: start, lt: end } },
     });
     return `INC-${date}-${String(count + 1).padStart(3, '0')}`;
+  }
+
+  private async notifyStatus(ticket: any, statusText: string, extraRecipient?: string) {
+    const recipients = new Set([ticket.requesterUserid]);
+    if (extraRecipient) recipients.add(extraRecipient);
+    for (const recipientUserid of recipients) {
+      await this.notifyService.notify({
+        type: NotificationType.STATUS_CHANGE,
+        recipientUserid,
+        context: { ticketNo: ticket.ticketNo, title: ticket.title, statusText },
+      });
+    }
   }
 
   private assertTechOrAdmin(role: UserRole) {

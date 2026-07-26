@@ -258,3 +258,40 @@ model KbArticle {
   @@index([sourceType, sourceId])
   @@map("kb_articles")
 }
+
+enum NotificationType {
+  ASSIGN        @map("assign")
+  STATUS_CHANGE @map("status_change")
+  TIMEOUT       @map("timeout")
+  REMINDER      @map("reminder")
+
+  @@map("notification_type")
+}
+
+enum NotificationStatus {
+  PENDING @map("pending")
+  SENT    @map("sent")
+  FAILED  @map("failed")
+
+  @@map("notification_status")
+}
+
+model Notification {
+  id             Int               @id @default(autoincrement())
+  type           NotificationType
+  title          String
+  content        String
+  payload        Json?
+  recipientUserid String           @map("recipient_userid")
+  read           Boolean           @default(false)
+  channel        String            @default("in_app") // R7 替换为 wecom
+  status         NotificationStatus @default(PENDING)
+  retryCount     Int               @default(0) @map("retry_count")
+  lastError      String?           @map("last_error")
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+
+  @@index([recipientUserid, read])
+  @@index([status])
+  @@map("notifications")
+}

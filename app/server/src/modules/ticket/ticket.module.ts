@@ -5,11 +5,12 @@
  */
 import { Module } from '@nestjs/common';
 import { KbModule } from '../kb/kb.module';
+import { NotifyModule } from '../notify/notify.module';
 import { TicketService } from './ticket.service';
 import { TicketController } from './ticket.controller';
 
 @Module({
-  imports: [KbModule],
+  imports: [KbModule, NotifyModule],
   controllers: [TicketController],
   providers: [TicketService],
 })

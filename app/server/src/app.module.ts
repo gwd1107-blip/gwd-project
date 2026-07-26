@@ -13,6 +13,7 @@ import { TicketModule } from './modules/ticket/ticket.module';
 import { CategoryModule } from './modules/category/category.module';
 import { ProblemModule } from './modules/problem/problem.module';
 import { KbModule } from './modules/kb/kb.module';
+import { NotifyModule } from './modules/notify/notify.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { KbModule } from './modules/kb/kb.module';
     TicketModule,
     ProblemModule,
     KbModule,
+    NotifyModule,
   ],
 })
 export class AppModule {}
