@@ -8,6 +8,8 @@ import vue from '@vitejs/plugin-vue';
 import { resolve } from 'path';
 
 export default defineConfig({
+  // 生产环境部署在 /admin 子路径下
+  base: process.env.NODE_ENV === 'production' ? '/admin/' : '/',
   plugins: [vue()],
   resolve: {
     alias: {
