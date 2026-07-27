@@ -6,10 +6,12 @@
 import { Body, Controller, Get, Post, Query, Res } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
+import { Public } from '../auth/public.decorator';
 import { loadWecomConfig } from './wecom.config';
 import { decryptMessage, getSignature } from './wecom.crypt';
 
 @Controller('wecom/callback')
+@Public()
 export class WecomCallbackController {
   constructor(private readonly config: ConfigService) {}
 

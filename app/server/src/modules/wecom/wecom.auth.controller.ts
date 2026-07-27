@@ -9,10 +9,12 @@ import { Response } from 'express';
 import { AuthService } from '../auth/auth.service';
 import { UserService } from '../user/user.service';
 import { UserRole } from '@prisma/client';
+import { Public } from '../auth/public.decorator';
 import { loadWecomConfig } from './wecom.config';
 import { WecomApiService } from './wecom.api.service';
 
 @Controller('wecom/oauth')
+@Public()
 export class WecomAuthController {
   constructor(
     private readonly config: ConfigService,
